@@ -17,6 +17,15 @@ public class Job {
     private String createTime;
     private String Note;
     private int jobStatus;
+    private String resultType;
+
+    public String getResultType() {
+        return resultType;
+    }
+
+    public void setResultType(String resultType) {
+        this.resultType = resultType;
+    }
 
     public int getJobStatus() {
         return jobStatus;
@@ -97,7 +106,12 @@ public class Job {
                 ", GraphPath='" + GraphPath + '\'' +
                 ", userId=" + userId +
                 ", pythonFolder='" + pythonFolder + '\'' +
+                ", jobName='" + jobName + '\'' +
+                ", updateTime='" + updateTime + '\'' +
+                ", createTime='" + createTime + '\'' +
+                ", Note='" + Note + '\'' +
+                ", jobStatus=" + jobStatus +
+                ", resultType='" + resultType + '\'' +
                 '}';
     }
-
 }

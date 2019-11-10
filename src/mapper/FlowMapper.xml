@@ -13,4 +13,14 @@
     <delete id="deleteJobById">
         delete from Job where jobId=#{jobId}
     </delete>
+
+    <update id="setResultType" >
+        update Job set result_type=#{type}
+        where jobId=#{jobId}
+    </update>
+    
+    <update id="setJobStatus">
+        update Job set jobStatus=#{status}
+        where jobId=#{jobId}
+    </update>
 </mapper>

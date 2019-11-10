@@ -16,4 +16,6 @@ public interface FlowService {
     List<Job> getFlows (String name);
     int deleteTaskById( int jobId);
     int deleteJobById( int jobId);
+    int setResultType(int jobId,String type);
+    int setJobStatus(int jobId,int status);
 }

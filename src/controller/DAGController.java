@@ -5,6 +5,7 @@ import Utils.common.*;
 import Utils.codemaker.DAGUtils;
 import Utils.codemaker.PythonCodeMaker;
 import com.fasterxml.jackson.databind.JsonNode;
+import org.apache.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
@@ -23,6 +24,7 @@ import java.util.Map;
 public class DAGController {
     @Autowired
     public DAGService dagService;
+    Logger log = Logger.getLogger(DAGController.class);
     public Map<String,String> config = ConfigReader.getResourceMap(Constant.freemarkerConfig);
     /** 
     * @Description:根据json数据得到python文件
@@ -34,11 +36,18 @@ public class DAGController {
     @ResponseBody
     @RequestMapping("/genaTask" )
     public MLResult genaTask(@RequestBody Map<String,String> map){
+        log.debug(map);
+
         //得到模型的模板名称
         String modelPath = dagService.getModelPath(map.get("model"));
+        if(modelPath.isEmpty()){
+            log.error("null modelName");
+        }
+        log.debug("modelPath="+modelPath);
+
         //python文件位置
         String pythonPath = PythonCodeMaker.RunTemplate(map,config,modelPath);
-        System.out.println(map.get("jobId"));
+        log.debug("pythonPath="+pythonPath);
 
         //初始化task
         int jobId = Integer.parseInt(map.get("jobId"));
@@ -49,6 +58,8 @@ public class DAGController {
         task.setTaskParam(JsonUtils.objectToJson(map));
         task.setModelName(map.get("model"));
         task.setPythonPath(pythonPath);
+        log.debug(task);
+
         //插入task
         dagService.InsertTask(task);
         return MLResult.ok();
@@ -63,13 +74,16 @@ public class DAGController {
     @ResponseBody
     @RequestMapping("/dataCheck" )
     public MLResult DataCheck(@RequestBody Map<String,String> map){
+        log.debug("web params: "+map);
         //将前端传来的数据进行转发请求
         String data_path = map.get("data_path");
-        System.out.println(data_path);
+        log.debug(data_path);
         Map<String,String> params = new HashMap<>();
         params.put("path_name",data_path);
         String result = HttpUtils.sendPost(Constant.data_Url,params);
-        System.out.println(result);
+        log.debug("data check result: "+result);
+
+        //判断结果输出
         if(JsonUtils.JsonToTree(result).get("success").toString().equals("true")){
             //初始化task
             int jobId = Integer.parseInt(map.get("jobId"));
@@ -80,6 +94,7 @@ public class DAGController {
             task.setTaskParam(JsonUtils.objectToJson(map));
             task.setModelName(map.get("model"));
             task.setPythonPath("not exist");
+
             //插入task
             dagService.InsertTask(task);
             return MLResult.ok();
@@ -105,20 +120,22 @@ public class DAGController {
     @ResponseBody
     @RequestMapping(value = "/genaDag")
     public MLResult genaDag(@RequestBody String  params){
-        //System.out.println(graph);
         //保存dag的信息
-        System.out.println(params);
+        log.debug("dag params: "+params);
         JsonNode rootNode = JsonUtils.JsonToTree(params);
         JsonNode edges = rootNode.get("jobId");
         int jobId = edges.intValue();
+        log.debug("jobId: "+jobId);
+        String graphPath = DAGUtils.DagSave(params,jobId);
+        log.debug("graphPath: "+graphPath);
 
-
-        String graphPath = DAGUtils.DagSave(params);
+        //命名工作空间
+        String pythonFolder =config.get("file-python")+"/job-"+jobId;
+        log.debug("workSpace: "+pythonFolder);
 
         //初始化job信息
         Job job = new Job();
         job.setGraphPath(graphPath);
-        String pythonFolder =config.get("file-python");
         job.setPythonFolder(pythonFolder);
         job.setUpdateTime(TimeUtils.getCurrentTime());
         job.setJobId(jobId);
@@ -131,38 +148,42 @@ public class DAGController {
         DagGraph dagGraph = DAGUtils.getDag(params);
         //得到Dag的计算顺序
         List<Integer> list = DAGUtils.OrderOfCompute(dagGraph);
+        log.debug("compute order is "+list);
         //生成运行脚本main.sh
         String shellContent="";
         for (int nodeId:list){
             if(nodeId !=1){
                 String pythonPath = dagService.getPythonPath(jobId,nodeId);
-                System.out.println(pythonPath);
+                log.debug("nodeId: "+nodeId+", python file: "+pythonPath);
                 String pythonName = pythonPath.substring(pythonPath.lastIndexOf("/"));
                 shellContent = shellContent+"python"+"   "+"/data"+pythonName+"\n";
             }
         }
-        String savePath = config.get("file-python");
-        String shellPath = savePath+"/main.sh";
+
+        String shellPath = pythonFolder+"/main.sh";
         FileUtils.WriteToFile(shellPath,shellContent);
         //调用计算服务
         Map<String,String> computeMap = new HashMap<>();
 
         computeMap.put("jobId",String.valueOf(jobId));
-        computeMap.put("codePath","/home/hadoop/data/tensorflow/test2");
+        computeMap.put("codePath",pythonFolder);
         computeMap.put("startShellName","main.sh");
 
-        String res = HttpUtils.sendPost(Constant.train_url+"/managePlatform/requestRunTask/",computeMap);
+        try{
+            String res = HttpUtils.sendPost(Constant.train_url+"/managePlatform/requestRunTask/",computeMap);
+            log.debug("run job result: "+res);
+        }
+        catch (Exception e){
+            log.error("run job failed!");
+        }
 
-        System.out.println(res);
         //封装必要的数据
         Map<String,Object> resultMap = new HashMap<>();
         resultMap.put("shellPath",shellPath);
-        resultMap.put("savePath",savePath);
+        resultMap.put("savePath",pythonFolder);
         resultMap.put("jobId",jobId);
 
-
         return MLResult.ok(resultMap);
-
     }
 
     @ResponseBody
@@ -170,7 +191,8 @@ public class DAGController {
     public String  getJob (int jobId){
         Job job = dagService.getJob(jobId);
         String graph = FileUtils.readFileByLines(job.getGraphPath());
-        System.out.println(graph);
+        log.debug("graph: "+graph);
         return graph;
     }
+
 }

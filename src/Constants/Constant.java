@@ -23,8 +23,6 @@ public class Constant {
 
     public static final String train_url = "http://115.154.137.56:12346";
 
-    public static final String log_url = "/home/hadoop/data/tensorflow/log/test2/log.txt";
-
     public static final String tensorboard_path = "/home/hadoop/tensorboard/ten.sh";
     //public static final String log_url = "/Users/sunjack/Desktop/error.log";
     public static final int pageSize = 20;
@@ -32,4 +30,7 @@ public class Constant {
     public static final int JOB_RUNNING = 1;
     public static final int JOB_SUCCESS = 2;
     public static final int JOB_FAILED = 3;
+
+    public static final String RESULT_TYPE1 = "tensorboard";
+    public static final String RESULT_TYPE2 = "log";
 }

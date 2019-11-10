@@ -1,6 +1,7 @@
 package Utils.codemaker;
 
 
+import Utils.common.FileUtils;
 import freemarker.template.Configuration;
 import freemarker.template.Template;
 
@@ -34,7 +35,8 @@ public class PythonCodeMaker {
             cfg.setDirectoryForTemplateLoading(new File(config.get("templates-path")));
             Template template = cfg.getTemplate(fileName);
             String RealName = fileName.substring(0,fileName.lastIndexOf("."))+".py";
-            String savePath = config.get("file-python");
+            String savePath = config.get("file-python")+"/job-"+map.get("jobId");
+            FileUtils.createFileFloder(savePath);
             RealPath = savePath+"/"+RealName;
             Writer out = new OutputStreamWriter(new FileOutputStream(RealPath), config.get("SYSTEM_ENCODING"));
             template.process(map, out);

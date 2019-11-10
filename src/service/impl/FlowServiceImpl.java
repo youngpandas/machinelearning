@@ -33,4 +33,14 @@ public class FlowServiceImpl implements FlowService {
         return mapper.deleteJobById(jobId);
     }
 
+    @Override
+    public int setResultType(int jobId, String type) {
+        return mapper.setResultType(jobId,type);
+    }
+
+    @Override
+    public int setJobStatus(int jobId, int status) {
+        return mapper.setJobStatus(jobId,status);
+    }
+
 }

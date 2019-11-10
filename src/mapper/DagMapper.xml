@@ -3,7 +3,7 @@
 <mapper namespace="mapper.DagMapper" >
     <insert id="JobInsert" parameterType="Job">
         insert into Job  values(0,#{GraphPath},#{userId},#{pythonFolder},#{jobName},
-        #{createTime},#{updateTime},#{Note},#{jobStatus})
+        #{createTime},#{updateTime},#{Note},#{jobStatus},#{resultType})
         <selectKey resultType="int"  keyProperty="jobId" >
             SELECT @@IDENTITY AS id
         </selectKey>

@@ -1,101 +1,13 @@
 package Utils.common;
 
+import org.apache.log4j.Logger;
+
 import java.io.*;
 import java.net.HttpURLConnection;
 import java.net.URL;
 
 public class FileUtils {
-
-
-    private static final String TAG = "uploadFile";
-    private static final int TIME_OUT = 100 * 1000; // 超时时间
-    private static final String CHARSET = "utf-8"; // 设置编码
-
-    /**
-     *        上传文件到服务器
-     *
-     * @param file
-     *            需要上传的文件
-     * @param RequestURL
-     *            文件服务器的rul
-     * @return 返回响应的内容
-     *
-     */
-    public static String uploadFile(File file, String RequestURL) throws IOException {
-        String result = null;
-        String BOUNDARY = "letv"; // 边界标识 随机生成
-        String PREFIX = "--", LINE_END = "\r\n";
-        String CONTENT_TYPE = "multipart/form-data"; // 内容类型
-
-        try {
-            URL  url = new URL(RequestURL);
-            HttpURLConnection conn = (HttpURLConnection) url.openConnection();
-            conn.setReadTimeout(TIME_OUT);
-            conn.setConnectTimeout(TIME_OUT);
-            conn.setDoInput(true); // 允许输入流
-            conn.setDoOutput(true); // 允许输出流
-            conn.setUseCaches(false); // 不允许使用缓存
-            conn.setRequestMethod("POST"); // 请求方式
-            conn.setRequestProperty("Charset", CHARSET); // 设置编码
-            conn.setRequestProperty("connection", "keep-alive");
-            conn.setRequestProperty("Content-Type", CONTENT_TYPE + ";boundary="
-                    + BOUNDARY);
-            conn.setRequestProperty("User-Agent", "Mozilla/5.0 (Windows NT 6.1; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/61.0.3163.100 Safari/537.36)");
-            if (file != null) {
-                /**
-                 * 当文件不为空，把文件包装并且上传
-                 */
-                DataOutputStream dos = new DataOutputStream(
-                        conn.getOutputStream());
-                StringBuffer sb = new StringBuffer();
-                sb.append(PREFIX);
-                sb.append(BOUNDARY);
-                sb.append(LINE_END);
-                /**
-                 * 这里重点注意： name里面的值为服务器端需要key 只有这个key 才可以得到对应的文件
-                 * filename是文件的名字，包含后缀名的 比如:abc.png
-                 */
-                sb.append("Content-Disposition: form-data; name=\"file\"; filename=\""
-                        + file.getName() + "\"" + LINE_END);
-                sb.append("Content-Type: application/ctet-stream" + LINE_END);
-                sb.append(LINE_END);
-                dos.write(sb.toString().getBytes());
-                InputStream is = new FileInputStream(file);
-                byte[] bytes = new byte[1024 * 1024];
-                int len = 0;
-                while ((len = is.read(bytes)) != -1) {
-                    dos.write(bytes, 0, len);
-                }
-                is.close();
-                dos.write(LINE_END.getBytes());
-                byte[] end_data = (PREFIX + BOUNDARY + PREFIX + LINE_END)
-                        .getBytes();
-                dos.write(end_data);
-                dos.flush();
-                /**
-                 * 获取响应码 200=成功 当响应成功，获取响应的流
-                 */
-                int res = conn.getResponseCode();
-
-                // if(res==200)
-                // {
-
-                InputStream input = conn.getInputStream();
-                StringBuffer sb1 = new StringBuffer();
-                int ss;
-                while ((ss = input.read()) != -1) {
-                    sb1.append((char) ss);
-                }
-                result = sb1.toString();
-                result = new String(result.getBytes("iso8859-1"), "utf-8");
-
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
-            return null;
-        }
-        return result;
-    }
+    private static final Logger log = Logger.getLogger(FileUtils.class);
 
     public static void WriteToFile(String path,String data){
         try{
@@ -145,7 +57,6 @@ public class FileUtils {
                 byte[] tempbytes = new byte[100];
                 int byteread = 0;
                 in = new FileInputStream(fileName);
-                showAvailableBytes(in);
                 // 读入多个字节到字节数组中，byteread为一次读入的字节数
                 while ((byteread = in.read(tempbytes)) != -1) {
                     System.out.write(tempbytes, 0, byteread);
@@ -253,61 +164,56 @@ public class FileUtils {
             return result;
         }
 
-        /**
-         * 随机读取文件内容
-         */
-        public static void readFileByRandomAccess(String fileName) {
-            RandomAccessFile randomFile = null;
-            try {
-                System.out.println("随机读取一段文件内容：");
-                // 打开一个随机访问文件流，按只读方式
-                randomFile = new RandomAccessFile(fileName, "r");
-                // 文件长度，字节数
-                long fileLength = randomFile.length();
-                // 读文件的起始位置
-                int beginIndex = (fileLength > 4) ? 4 : 0;
-                // 将读文件的开始位置移到beginIndex位置。
-                randomFile.seek(beginIndex);
-                byte[] bytes = new byte[10];
-                int byteread = 0;
-                // 一次读10个字节，如果文件内容不足10个字节，则读剩下的字节。
-                // 将一次读取的字节数赋给byteread
-                while ((byteread = randomFile.read(bytes)) != -1) {
-                    System.out.write(bytes, 0, byteread);
-                }
-            } catch (IOException e) {
-                e.printStackTrace();
-            } finally {
-                if (randomFile != null) {
-                    try {
-                        randomFile.close();
-                    } catch (IOException e1) {
-                    }
-                }
+        //创建文件夹
+        public static void createFileFloder(String path) {
+            File file = new File(path);
+            if (!file.exists()) {//如果文件夹不存在
+                file.mkdir();//创建文件夹
             }
         }
 
-        /**
-         * 显示输入流中还剩的字节数
-         */
-        private static void showAvailableBytes(InputStream in) {
-            try {
-                System.out.println("当前字节输入流中的字节数为:" + in.available());
-            } catch (IOException e) {
-                e.printStackTrace();
+        //级联删除文件夹
+        public static void deleteFile(String path){
+            File file = new File(path);
+            log.debug("deleting path: "+path);
+            if (file == null || !file.exists()){
+                log.error(path + "file is not exists!");
+                return;
             }
+            if(file.isFile()){
+                file.delete();
+                return;
+            }
+            //取得这个目录下的所有子文件对象
+            File[] files = file.listFiles();
+            //遍历该目录下的文件对象
+            for (File f: files){
+                //打印文件名
+                String name = file.getName();
+                log.debug("file is "+name);
+                //判断子目录是否存在子目录,如果是文件则删除
+                if (f.isDirectory()){
+                    deleteFile(f.getPath());
+                }else {
+                    f.delete();
+                }
+            }
+            //删除空文件夹  for循环已经把上一层节点的目录清空。
+            file.delete();
         }
-
-
 
 
     public static void main(String[] args) {
-        String data = "python "+"test1.py\n"+"python "+"test2.py" +
-                "\n";
-        WriteToFile("/Users/sunjack/freemarker/out/main.sh",data);
-        String path = "/Users/sunjack/freemarker/out/main.sh";
-        System.out.println(path.substring(path.lastIndexOf("/")));
+//        String data = "python "+"test1.py\n"+"python "+"test2.py" +
+//                "\n";
+//        WriteToFile("/Users/sunjack/freemarker/out/main.sh",data);
+//        String path = "/Users/sunjack/freemarker/out/main.sh";
+//        System.out.println(path.substring(path.lastIndexOf("/")));
+//
+//        System.out.println(readFileByLines("/Users/sunjack/Desktop/error.log"));
 
-        System.out.println(readFileByLines("/Users/sunjack/Desktop/error.log"));
+        FileUtils.createFileFloder("/Users/sunjack/test03");
+        FileUtils.createFileFloder("/Users/sunjack/test03/test");
+        FileUtils.deleteFile("/Users/sunjack/test03");
     }
 }

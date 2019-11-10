@@ -6,6 +6,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JavaType;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import pojo.result.JobResult;
 
 
 /**
@@ -83,11 +84,16 @@ public class JsonUtils {
         JsonNode rootNode = JsonToTree(jsonString);
         return rootNode.get(key).toString();
     }
-//    public static void main(String[] args) {
+    public static void main(String[] args) {
 //        List<UserInfo> list = new ArrayList<>();
 //        list.add(new UserInfo(1,"zzs","123"));
 //
 //        System.out.print(JsonUtils.objectToJson(MLResult.ok(list)));
-//    }
+
+//        String res = "{\"succeed\":true,\"status\":\"succeeded\",\"reason\":\"\"}";
+//
+//        JobResult job = JsonUtils.jsonToPojo(res,JobResult.class);
+//        System.out.println(job);
+    }
 
 }

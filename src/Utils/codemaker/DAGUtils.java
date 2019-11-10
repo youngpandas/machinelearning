@@ -3,6 +3,7 @@ package Utils.codemaker;
 import Constants.Constant;
 import Utils.common.JsonUtils;
 import com.fasterxml.jackson.databind.JsonNode;
+import org.apache.log4j.Logger;
 import pojo.DagGraph;
 import pojo.Dag.Edge;
 import pojo.Dag.Node;
@@ -19,6 +20,7 @@ import java.util.*;
  **/
 
 public class DAGUtils {
+    private static final Logger log = Logger.getLogger(DAGUtils.class);
     /** 
     * @Description: 根据json文件初始化Dag(边，节点，邻接矩阵)
     * @Param: [GraphJson] 
@@ -28,13 +30,15 @@ public class DAGUtils {
     */ 
     public static DagGraph getDag(String GraphJson){
         JsonNode rootNode = JsonUtils.JsonToTree(GraphJson);
+        //解析edges
         JsonNode edges = rootNode.get("edges");
         String edgesJson = edges.toString();
-        System.out.println(edgesJson);
+        log.debug("edges:" + edgesJson);
 
+        //解析nodes
         JsonNode nodes = rootNode.get("nodes");
         String nodesJson = nodes.toString();
-        System.out.println(nodesJson);
+        log.debug("nodes: "+nodesJson);
 
         DagGraph graph = new DagGraph();
         List<Edge> e= (List<Edge>)JsonUtils.jsonToList(edgesJson,Edge.class);
@@ -53,7 +57,7 @@ public class DAGUtils {
             graphMap.put(node.getId(),nlist);
         }
         graph.setMap(graphMap);
-        System.out.println(JsonUtils.objectToJson(graphMap));
+        log.debug("graph: "+JsonUtils.objectToJson(graphMap));
         return graph;
     }
     /** 
@@ -63,9 +67,9 @@ public class DAGUtils {
     * @Author: Mr.Sun 
     * @Date: 2019/5/7 
     */ 
-    public static String  DagSave(String GraphJson){
-        String graphPath = Constant.Graph+UUID.randomUUID()+".json";
-        System.out.print(graphPath);
+    public static String  DagSave(String GraphJson,int jobId){
+        String graphPath = Constant.Graph+"job-"+jobId+".json";
+        log.debug("graphPath:"+graphPath);
         File f = new File(graphPath);
         try{
             if(!f.exists()){

@@ -99,8 +99,8 @@ public class JavaShellUtil {
     public static String CallTensorBoard(String tensorPath) {
         try {
             Process process = Runtime.getRuntime().exec("nohup sh "+tensorPath+" &");
-            int exitValue = process.waitFor();
-            if (0 != exitValue) {
+            process.waitFor();
+            if (0 != process.exitValue()) {
                 return "error";
             }
             else {
